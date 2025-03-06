@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.express as px
+import os 
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
@@ -21,10 +22,10 @@ app.layout = html.Div([
                     id='transit-type',
                     options=[
                         {'label': 'Bus', 'value': 'bus'},
-                        {'label': 'Train (L)', 'value': 'train'},
-                        {'label': 'All', 'value': 'all'}
+                        {'label': 'Train (L)', 'value': 'rail'},
+                        {'label': 'All', 'value': 'total'}
                     ],
-                    value='all',
+                    value='total',
                     inline=True
                 )
             ], width=12, className="mb-4")
@@ -80,9 +81,10 @@ def load_data():
     # train_data = pd.read_csv('train_ridership.csv')
     
     dates = pd.date_range(start='2018-01-01', end='2023-12-31', freq='D')
-    
+    print(os.getcwd())
     # Generate sample data with a pandemic effect (drop in March 2020)
-    data = pd.read_csv("cta-ridership-totals.csv", parse_dates=["service_date"]).rename({"service_date" : "date"}, axis="columns")
+    
+    data = pd.read_csv("data/cta-ridership-clean.csv", parse_dates=["date"])
     
     # Add some derived columns
     data['weekday'] = data['date'].dt.dayofweek < 5
@@ -110,11 +112,11 @@ def update_timeline(transit_type, start_date, end_date):
     if transit_type == 'bus':
         fig = px.line(filtered_df, x='date', y='bus_riders', 
                       title='CTA Bus Ridership Over Time')
-    elif transit_type == 'train':
-        fig = px.line(filtered_df, x='date', y='train_riders', 
+    elif transit_type == 'rail':
+        fig = px.line(filtered_df, x='date', y='rail_riders', 
                       title='CTA Train Ridership Over Time')
     else:
-        fig = px.line(filtered_df, x='date', y=['bus_riders', 'train_riders', 'total_riders'], 
+        fig = px.line(filtered_df, x='date', y=['bus_riders', 'rail_riders', 'total_riders'], 
                       title='CTA Ridership Over Time')
     
     # Add pandemic marker line
