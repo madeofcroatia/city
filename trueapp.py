@@ -13,10 +13,21 @@ ridership_df = (
     .drop('day_type', axis='columns')
 )
 
+def get_marks(df):
+    dates_to_mark = df['date'].dt.year.diff()
+    marks = {int(i) : str(df.loc[i, 'date'].year) for i in np.where(dates_to_mark != 0)[0]}
+    return marks
 
 app.layout = html.Div([
     html.H4('CTA Ridership'),
     dcc.Graph(id="time-series-chart"),
+    dcc.RangeSlider(
+        id="dateslider",
+        min=0, max=ridership_df.shape[0]-1, step=1,
+        value=[0, ridership_df.shape[0]-1],
+        marks=get_marks(ridership_df),
+        updatemode="drag"
+    ),
     html.P("Select mode of transportation:"),
     dcc.Checklist(
         id="modes",
@@ -60,8 +71,9 @@ app.layout = html.Div([
     Output("time-series-chart", "figure"), 
     Input("modes", "value"),
     Input('resolution', 'value'),
-    Input('aggregation', 'value'))
-def display_time_series(modes, resolution, aggregation):
+    Input('aggregation', 'value'),
+    Input('dateslider', 'value'))
+def display_time_series(modes, resolution, aggregation, dateslider):
     #df = pd.DataFrame({
     #    "date" : pd.date_range("2020-01-01", "2021-01-01", freq="D"),
     #    "AMZN" : np.random.randint(10, 20, 367),
@@ -69,10 +81,13 @@ def display_time_series(modes, resolution, aggregation):
     #    "NFLX" : np.random.randint(10, 25, 367),
     #})
     #fig = px.line(df, x='date', y=tickers)
+    min_date, max_date = dateslider
+    #print(min_date, max_date)
+    df = ridership_df.loc[min_date:max_date,]
     if aggregation == "mean":
-        df = ridership_df.set_index('date').resample(resolution).mean().reset_index()
+        df = df.set_index('date').resample(resolution).mean().reset_index()
     elif aggregation == "sum":
-        df = ridership_df.set_index('date').resample(resolution).sum().reset_index()
+        df = df.set_index('date').resample(resolution).sum().reset_index()
     fig = px.line(df, x="date", y=modes)
     return fig
 
