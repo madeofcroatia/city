@@ -41,7 +41,7 @@ app.layout = html.Div([
                     start_date=datetime(2019, 1, 1),
                     end_date=datetime(2023, 12, 31)
                 )
-            ], width=12, className="mb-4")
+            ], width='100%', className="mb-4")
         ]),
         
         dbc.Row([
@@ -54,11 +54,11 @@ app.layout = html.Div([
             dbc.Col([
                 html.H4("Monthly Comparison", className="text-center"),
                 dcc.Graph(id='monthly-comparison')
-            ], width=6),
+            ], width='10%'),
             dbc.Col([
                 html.H4("Weekday vs Weekend Patterns", className="text-center"),
                 dcc.Graph(id='weekday-weekend')
-            ], width=6)
+            ], width='10%')
         ], className="mb-4"),
         
         dbc.Row([
