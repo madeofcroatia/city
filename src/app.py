@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 import plotly.express as px
 import pandas as pd
 import numpy as np
+from utils.utils import get_df
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ridership_df = (
