@@ -1,6 +1,8 @@
-from dash import Dash, dcc, html, Input, Output, Patch, State, ctx, no_update
+from dash import Dash, dcc, html, Input, Output, Patch, State, ctx, no_update, ALL
 import dash_bootstrap_components as dbc
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
 from utils.utils import get_df
@@ -8,29 +10,16 @@ from utils.utils import get_df
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ridership_df = (
     pd.read_csv(
-        "city/data/cta-ridership-clean.csv",
+        "data/cta-ridership-clean.csv",
         parse_dates=['date']
     )
     .sort_values('date')
 )
 
-def get_df(min_date, max_date, modes, resolution, aggregation_method, daytypes = ["U", "W", "A"]):
-    #print(min_date, max_date)
-    df = (
-        ridership_df.query("day_type in @daytypes")
-                    .set_index('date')[modes]
-                    .loc[min_date:max_date]
-                    .resample(resolution)
-    )
-    if aggregation_method == "mean":
-        df = df.mean().reset_index()
-    elif aggregation_method == "sum":
-        df = df.sum().reset_index()
-    
-    return df
-    
+daytype_colors = ["gold", "blue"]
 fig = px.line(
     data_frame=get_df(
+        ridership_df,
         ridership_df['date'].min(), ridership_df['date'].max(),
         ['bus', 'rail'], 'W', 'mean'
     ),
@@ -38,6 +27,7 @@ fig = px.line(
     y=['bus', 'rail'],
     markers=True
 )
+
 fig.update_layout(
     title="Historical ridership data",
     dragmode="select",
@@ -49,6 +39,30 @@ fig.update_layout(
         x=0.99
     )
 )
+
+def make_comparison_div(min_date, max_date, modes, n, width=6):
+    df = (
+        ridership_df.loc[
+            (min_date <= ridership_df['date']) & (ridership_df['date'] <= max_date),
+        ].assign(weekday = lambda x: x['day_type'] == "W")
+    )
+    layout = dbc.Col([
+        dbc.Button("X", id={"type" : "dynamic-delete", "index" : n}),
+        dbc.Row(dcc.Graph(
+            id=f"main-top-{n}",
+            figure=px.line(df, x='date', y=modes)
+        )),
+        dbc.Row(dcc.Graph(
+            id=f"main-bot-{n}",
+            figure=px.line(
+                df, x='date', y=modes,
+                color_discrete_sequence=daytype_colors[:len(modes)],
+                facet_col="weekday"
+            )
+        ))
+    ], id=f"comparison-{n}", width=width, className='h-10')
+    return layout
+
 
 
 table_header = [
@@ -142,13 +156,22 @@ app.layout = dbc.Container([
         dbc.Row(dcc.Graph(id="time-series-chart", figure=fig))
     ], align='center', className="mb-0"),
     dbc.Row([
-        dbc.Col(input_table, width=6),
+        dbc.Col([
+            input_table,
+            dbc.Row([
+                dbc.Col(dcc.Graph(id="daytype-vis")),
+                #dbc.Col(dcc.Graph(id="weekdays-visualization"), width=6),
+                #dbc.Col(dcc.Graph(id="weekends-visualization"), width=6)
+            ], className="d-none", id="daytype-div")], width=6),
         dbc.Col([
             dbc.Row([
                 dbc.Col(html.Div("Ridership from "), width="auto"),
                 dbc.Col(dcc.DatePickerSingle(id="from-date"), width="auto"),
                 dbc.Col(html.Div(" until "), width="auto"),
-                dbc.Col(dcc.DatePickerSingle(id="till-date"), width="auto")
+                dbc.Col(dcc.DatePickerSingle(id="till-date"), width="auto"),
+                dbc.Col(dbc.Button(
+                    "save timeframe", id="save-button"
+                ))
             ], align="center", className="g-2 mt-0"),
             dcc.Graph(
                 id='zoomed-time-series-chart'
@@ -158,10 +181,7 @@ app.layout = dbc.Container([
             width=6
         )
     ], className="mb-0"),
-    dbc.Row([
-        dbc.Col(dcc.Graph(id="weekdays-visualization"), width=6),
-        dbc.Col(dcc.Graph(id="weekends-visualization"), width=6)
-    ], className="d-none", id="daytype-div")
+    dbc.Row(id="comparison-div", children=[])
 ], fluid=True)
 
 @app.callback(
@@ -181,7 +201,7 @@ def display_time_series(modes, resolution, aggregation):
     #fig = px.line(df, x='date', y=tickers)
     min_date, max_date = "2001-01-01", "2024-12-31"
     #print(min_date, max_date)
-    df = get_df(min_date, max_date, modes=modes, resolution=resolution, aggregation_method=aggregation)
+    df = get_df(ridership_df, min_date, max_date, modes=modes, resolution=resolution, aggregation_method=aggregation)
     fig = Patch()
     fig['data'] = [{'x' : df['date'], 'y' : df[mode], 'name' : mode} for mode in modes]
     #for i in range(2 - len(modes)):
@@ -213,6 +233,7 @@ def display_zoomed_time_series(selectedData, modes, resolution, aggregation, min
         max_date = x_max.split()[0]
 
     zoomed_df = get_df(
+        ridership_df,
         min_date=min_date, max_date=max_date,
         modes=modes, resolution=resolution, aggregation_method=aggregation
     )
@@ -288,29 +309,66 @@ def allow_select_customization(synchronization, modes1, resolution1, aggregation
     return enabled_modes, enabled_resolution, enabled_aggregation, no_update, no_update, no_update
 
 @app.callback(
-    Output("weekdays-visualization", "figure"),
-    Output("weekends-visualization", "figure"),
+    Output("daytype-vis", "figure"),
     Output("daytype-div", "className"),
     Input("from-date", "date"),
-    Input("till-date", "date")
+    Input("till-date", "date"),
+    Input("modes2", "value")
 )
-def update_daytype_visualizations(min_date, max_date):
+def update_daytype_visualizations(min_date, max_date, modes):
     if min_date is None or max_date is None:
         return no_update
-    weekdays_df = get_df(
-        min_date=min_date, max_date=max_date, modes=['bus', 'rail'],
-        resolution='D', aggregation_method='mean', daytypes=["W"]
-    )
-    weekends_df = get_df(
-        min_date=min_date, max_date=max_date, modes=['bus', 'rail'],
-        resolution='D', aggregation_method='mean', daytypes=["U", "A"]
+    
+    df = (
+        ridership_df.loc[
+            (min_date <= ridership_df['date']) & (ridership_df['date'] <= max_date),
+        ].assign(weekday = lambda x: x['day_type'] == "W")
     )
 
-    weekdays_fig = px.line(weekdays_df, x="date", y=['bus', 'rail'])
-    weekends_fig = px.line(weekends_df, x="date", y=['bus', 'rail'])
+    print(df.columns)
+    daytype_fig = px.line(
+        df, x='date', y=modes,
+        facet_col='weekday',
+        color_discrete_sequence=daytype_colors[:len(modes)]
+    )
 
-    return weekdays_fig, weekends_fig, "mt-0"
+    return daytype_fig, "mt-0"
 
 
 
+
+@app.callback(
+    Output("comparison-div", "children"),
+    Input("save-button", "n_clicks"),
+    State("from-date", "date"),
+    State("till-date", "date"),
+    State("modes2", "value"),
+    Input({"type" : "dynamic-delete", "index" : ALL}, "n_clicks"),
+    State("comparison-div", "children")
+)
+def f(n, min_date, max_date, modes, _, children):
+    if max_date is None or min_date is None:
+        return []
+    
+    print(ctx.triggered_id)
+
+    if ctx.triggered_id == "save-button":
+        patched_children = Patch()
+        patched_children.append(
+            make_comparison_div(min_date, max_date, modes, n)
+        )
+        return patched_children
+
+    if ctx.triggered_id['type'] == 'dynamic-delete':
+        new_children = []
+        for child in children:
+            if child['props']['id'] != f"comparison-{ctx.triggered_id['index']}":
+                new_children.append(child)
+
+        return new_children
+
+    
+    
+
+    
 app.run_server(debug=True)
