@@ -7,6 +7,18 @@ COMPARISON_DIV_LAYOUT = {
     'xaxis_title' : None
 }
 
+MAIN_FIGURE_LAYOUT = {
+    'title': 'Historical ridership data',
+    'dragmode': 'select',
+    'margin': {'b': 0},
+    'legend': {
+        'yanchor': 'top',
+        'y': 0.99,
+        'xanchor': 'right',
+        'x': 0.99
+    }
+}
+
 COMPARISON_UNIT_WIDTH = 3
 
 DEFAULT_MODES = ['bus', 'rail']

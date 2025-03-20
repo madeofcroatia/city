@@ -8,7 +8,8 @@ def make_comparison_div():
         [
             html.Hr(),
             html.H4('Comparison of timeframes', className="text-center"),
-            dbc.Row(id="comparison-div", children=[], class_name="flex-nowrap overflow-auto")
+            dbc.Row(id="comparison-div", children=[], class_name="flex-nowrap overflow-auto"),
+            dbc.Row(id="comparison-div-dual", children=[])
         ],
         id="comparison-div-parent"
     )
@@ -34,8 +35,15 @@ def make_comparison_unit(ridership_df, min_date, max_date, modes, n):
     main_bot.update_xaxes(showticklabels=False, title=None)
     layout = dbc.Col([
         dbc.Row([
-            dbc.Col(dbc.Button("X", id={"type" : "dynamic-delete", "index" : n}, size="sm"), width="auto"),
-            dbc.Col(html.Div(f"{min_date} to {max_date}"), width="auto")
+            dbc.Col(
+                dbc.Button("x", id={"type" : "dynamic-delete", "index" : n}, size="sm"),
+                width="auto"
+            ),
+            dbc.Col(html.Div(f"{min_date} to {max_date}"), width="auto"),
+            dbc.Col(dcc.Checklist(
+                options=[{'value': True, 'label': ''}],
+                id=f'comparison-unit-check-{n}'
+            ))
         ], className="mt-1 mb-1", style={'height' : 'comparison-unit-button'}),
         dbc.Row(dcc.Graph(
             figure=main_top,
@@ -47,3 +55,6 @@ def make_comparison_unit(ridership_df, min_date, max_date, modes, n):
         ), className="comparison-unit-bot")
     ], id=f"comparison-{n}", width=COMPARISON_UNIT_WIDTH, className="border comparison-unit")
     return layout
+
+
+def make_close_comparison_div():
