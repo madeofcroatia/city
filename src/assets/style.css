@@ -1,0 +1,19 @@
+.DateInput_input, .DateInput_input_1 {
+    Height: 30px;
+  }
+
+.comparison-unit-button {
+  height: 10%;
+}
+
+.comparison-unit-top {
+  height: 55%;
+}
+
+.comparison-unit-bot {
+  height: 30%;
+}
+
+.comparison-unit {
+  height: 300px;
+}

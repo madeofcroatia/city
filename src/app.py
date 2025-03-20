@@ -5,7 +5,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
+from components import comparison_mode
 from utils.utils import get_df
+from utils.presets import COMPARISON_DIV_LAYOUT
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 ridership_df = (
@@ -40,28 +42,42 @@ fig.update_layout(
     )
 )
 
-def make_comparison_div(min_date, max_date, modes, n, width=6):
+"""def make_comparison_div(min_date, max_date, modes, n, width=3):
     df = (
         ridership_df.loc[
             (min_date <= ridership_df['date']) & (ridership_df['date'] <= max_date),
         ].assign(weekday = lambda x: x['day_type'] == "W")
     )
-    layout = dbc.Col([
-        dbc.Button("X", id={"type" : "dynamic-delete", "index" : n}),
-        dbc.Row(dcc.Graph(
-            id=f"main-top-{n}",
-            figure=px.line(df, x='date', y=modes)
-        )),
-        dbc.Row(dcc.Graph(
-            id=f"main-bot-{n}",
-            figure=px.line(
+    main_top = px.line(df, x='date', y=modes)
+    main_top.update_layout(**COMPARISON_DIV_LAYOUT)
+    #main_top.update_layout(margin=dict(b=10, t=10))
+    main_top.update_traces(line={'width' : 1})
+
+    main_bot = px.line(
                 df, x='date', y=modes,
                 color_discrete_sequence=daytype_colors[:len(modes)],
                 facet_col="weekday"
             )
-        ))
-    ], id=f"comparison-{n}", width=width, className='h-10')
-    return layout
+    main_bot.update_layout(**COMPARISON_DIV_LAYOUT)
+    main_bot.update_layout(margin=dict(t=20, b=0))
+    main_bot.update_xaxes(showticklabels=False, title=None)
+    layout = dbc.Col([
+        dbc.Row([
+            dbc.Col(dbc.Button("X", id={"type" : "dynamic-delete", "index" : n}, size="sm"), width="auto"),
+            dbc.Col(html.Div(f"{min_date} to {max_date}"), width="auto")
+        ], style={'height' : '10%'}, className="mt-1 mb-1"),
+        dbc.Row(dcc.Graph(
+            id=f"main-top-{n}",
+            figure=main_top,
+            config={'staticPlot': True}
+        ), style={'height' : '55%'}),
+        dbc.Row(dcc.Graph(
+            id=f"main-bot-{n}",
+            figure=main_bot,
+            config={'staticPlot': True}
+        ), style={'height' : '30%'})
+    ], id=f"comparison-{n}", width=width, style={"height" : "300px"}, className="border")
+    return layout"""
 
 
 
@@ -181,7 +197,7 @@ app.layout = dbc.Container([
             width=6
         )
     ], className="mb-0"),
-    dbc.Row(id="comparison-div", children=[])
+    comparison_mode.make_comparison_div()
 ], fluid=True)
 
 @app.callback(
@@ -355,7 +371,7 @@ def f(n, min_date, max_date, modes, _, children):
     if ctx.triggered_id == "save-button":
         patched_children = Patch()
         patched_children.append(
-            make_comparison_div(min_date, max_date, modes, n)
+            comparison_mode.make_comparison_unit(ridership_df, min_date, max_date, modes, n)
         )
         return patched_children
 
