@@ -89,7 +89,7 @@ def make_close_comparison_unit(ridership_df, min_date, max_date, modes, n):
     #main_bot.update_layout(**COMPARISON_DIV_LAYOUT)
     #main_bot.update_layout(margin=dict(t=20, b=0))
     #main_bot.update_xaxes(showticklabels=False, title=None)
-    layout = [
+    layout = dbc.Col([
         dbc.Row(
             dbc.Col(html.Div(f"{min_date} to {max_date}"), width="auto"),
             className="mt-1 mb-1",# style={'height' : 'comparison-unit-button'}
@@ -102,8 +102,8 @@ def make_close_comparison_unit(ridership_df, min_date, max_date, modes, n):
             figure=bot,
             config={'staticPlot': True}
         ))
-    ]
+    ], id={'type' : 'close-comparison-graph', 'index' : n})
     return layout
 
 
-default_container = dbc.Container("please, check graphs to compare.")
+default_container = dbc.Container("please, check graphs to compare.", id={'type' : 'default-container'})

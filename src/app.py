@@ -8,7 +8,7 @@ import numpy as np
 from components import comparison_mode
 from components.input_table import make_input_table
 from utils.utils import get_df
-from utils.presets import DEFAULT_MODES, DEFAULT_AGGREGATION,\
+from utils.presets import DEFAULT_MODES, DEFAULT_AGGREGATION, DAYTYPE_COLORS,\
                           DEFAULT_RESOLUTION, MAIN_FIGURE_LAYOUT
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -20,7 +20,6 @@ ridership_df = (
     .sort_values('date')
 )
 
-daytype_colors = ["gold", "blue"]
 fig = px.line(
     data_frame=get_df(
         ridership_df,
@@ -66,6 +65,8 @@ app.layout = dbc.Container([
             width=6
         )
     ], className="mb-0"),
+    dcc.Store(id='dates'),
+    dcc.Store(id='old_check'),
     comparison_div
 ], fluid=True)
 
@@ -199,7 +200,7 @@ def update_daytype_visualizations(min_date, max_date, modes):
     daytype_fig = px.line(
         df, x='date', y=modes,
         facet_col='weekday',
-        color_discrete_sequence=daytype_colors[:len(modes)]
+        color_discrete_sequence=DAYTYPE_COLORS[:len(modes)]
     )
 
     return daytype_fig, "mt-0"
@@ -208,67 +209,122 @@ def update_daytype_visualizations(min_date, max_date, modes):
 
 
 @app.callback(
+    Output("dates", "data"),
     Output("comparison-div", "children"),
     Input("save-button", "n_clicks"),
     State("from-date", "date"),
     State("till-date", "date"),
     State("modes2", "value"),
     Input({"type" : "dynamic-delete", "index" : ALL}, "n_clicks"),
-    State("comparison-div", "children")
+    State("comparison-div", "children"),
+    State("dates", "data")
 )
-def f(n, min_date, max_date, modes, _, children):
+def f(n, min_date, max_date, modes, _, children, dates):
     if max_date is None or min_date is None:
-        return []
+        return None, []
+    if dates is None:
+        dates = []
+    new_dates = []
     
-    #print(ctx.triggered_id)
-
     if ctx.triggered_id == "save-button":
         patched_children = Patch()
         patched_children.append(
             comparison_mode.make_comparison_unit(ridership_df, min_date, max_date, modes, n)
         )
-        return patched_children
+        new_dates = dates + [{'min_date' : min_date, 'max_date' : max_date}]
+        return new_dates, patched_children
 
     if ctx.triggered_id['type'] == 'dynamic-delete':
         new_children = []
-        for child in children:
+        for i, child in enumerate(children):
             if child['props']['id'] != f"comparison-{ctx.triggered_id['index']}":
+                new_dates.append(dates[i])
                 new_children.append(child)
 
-        return new_children
+        return new_dates, new_children
 
 
 @app.callback(
-    #Output('close-comparison-unit-left', 'children'),
-    #Output('close-comparison-unit-right', 'children'),
+    Output('old_check', 'data'),
+    Output('close-comparison-unit-left', 'children'),
+    Output('close-comparison-unit-right', 'children'),
     Input({'type': 'comparison-unit-check', 'index': ALL}, 'value'),
     State('close-comparison-unit-left', 'children'),
     State('close-comparison-unit-right', 'children'),
-    State('comparison-div', 'children')
+    State('comparison-div', 'children'),
+    State('dates', 'data'),
+    State('old_check', 'data')
+#    State({'type' : })
 )
-def update_close_comparison_graph(check, left, right, children):
-    print(check)
-    print(ctx.triggered_id)
-    print(left, right['props'].keys())
-    print(children[0]['props']['children'][1]['props']['children']['props']['figure']['data'][0]['x'][0])
+def update_close_comparison_graph(check, left, right, children, dates, old): 
+    print(old)
+    if check == []:
+        #print(f"{[1, 2, 3]}")
+        return [{'old' : check}], left, right
 
+    if len(old[0]['old']) < len(check):
+        return [{'old' : check}], left, right
+    triggered_index = None
+    for i, child in enumerate(children):
+        if child['props']['id'] == f'comparison-{ctx.triggered_id["index"]}':
+            triggered_index = i
+            break
+
+    def add_graph():
+        min_date = dates[triggered_index]['min_date']
+        max_date = dates[triggered_index]['max_date']
+        
+        graph = comparison_mode.make_close_comparison_unit(ridership_df, min_date, max_date, DEFAULT_MODES, ctx.triggered_id['index'])
+        if left['props']['id']['type'] == 'default-container':
+            return graph, right
+        elif right['props']['id']['type'] == 'default-container':
+            return left, graph
+        print(1)
+    
+
+    def remove_graph():
+        print(left['props']['id']['type'])
+        if left['props']['id']['type'] != 'default-container':
+            print(left['props']['id']['index'], ctx.triggered_id['index'])
+            if left['props']['id']['index'] == ctx.triggered_id['index']:
+                return comparison_mode.default_container, right
+        
+        if right['props']['id']['type'] != 'default-container':
+            if right['props']['id']['index'] == ctx.triggered_id['index']:
+                return left, comparison_mode.default_container
+        
+        print(2)
+    
+    print(check, triggered_index)
+    print(ctx.triggered_id)
+    if check[triggered_index] == [True]:
+        left_graph, right_graph = add_graph()
+        return [{'old' : check}], left_graph, right_graph
+    
+    old_checked = 0
+    for el in old[0]['old']:
+        if el == [True]:
+            old_checked += 1
+
+    new_checked = 0
+    for el in check:
+        if el == [True]:
+            new_checked += 1
+    
+    if new_checked == old_checked:
+        return [{'old' : check}], no_update, no_update
+    
+    left_graph, right_graph = remove_graph()
+    return [{'old' : check}], left_graph, right_graph
+
+
+    
+    #if left['props']['id']['type'] == 'default-container':
+
+        
 
 
 
 
 app.run_server(debug=True)
 
-"""
-    left_graph_id = None
-    right_graph_id = None
-
-    for i in range(len(check)):
-        if check[i] == [True]:
-            if left_graph_id is None:
-                left_graph_id = children[i]['props']['id']
-            else:
-                right_graph_id = children[i]['props']['id']
-    
-    if left_graph_id is None:
-        left_graph = left
-    else:"""
