@@ -195,7 +195,7 @@ def update_daytype_visualizations(min_date, max_date, modes):
         ].assign(weekday = lambda x: x['day_type'] == "W")
     )
 
-    print(df.columns)
+    #print(df.columns)
     daytype_fig = px.line(
         df, x='date', y=modes,
         facet_col='weekday',
@@ -220,7 +220,7 @@ def f(n, min_date, max_date, modes, _, children):
     if max_date is None or min_date is None:
         return []
     
-    print(ctx.triggered_id)
+    #print(ctx.triggered_id)
 
     if ctx.triggered_id == "save-button":
         patched_children = Patch()
@@ -239,9 +239,36 @@ def f(n, min_date, max_date, modes, _, children):
 
 
 @app.callback(
-    
+    #Output('close-comparison-unit-left', 'children'),
+    #Output('close-comparison-unit-right', 'children'),
+    Input({'type': 'comparison-unit-check', 'index': ALL}, 'value'),
+    State('close-comparison-unit-left', 'children'),
+    State('close-comparison-unit-right', 'children'),
+    State('comparison-div', 'children')
 )
-    
+def update_close_comparison_graph(check, left, right, children):
+    print(check)
+    print(ctx.triggered_id)
+    print(left, right['props'].keys())
+    print(children[0]['props']['children'][1]['props']['children']['props']['figure']['data'][0]['x'][0])
 
-    
+
+
+
+
 app.run_server(debug=True)
+
+"""
+    left_graph_id = None
+    right_graph_id = None
+
+    for i in range(len(check)):
+        if check[i] == [True]:
+            if left_graph_id is None:
+                left_graph_id = children[i]['props']['id']
+            else:
+                right_graph_id = children[i]['props']['id']
+    
+    if left_graph_id is None:
+        left_graph = left
+    else:"""
