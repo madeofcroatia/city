@@ -9,7 +9,7 @@ def make_comparison_div():
             html.Hr(),
             html.H4('Comparison of timeframes', className="text-center"),
             dbc.Row(id="comparison-div", children=[], class_name="flex-nowrap overflow-auto"),
-            dbc.Row(id="close-comparison-div", children=make_close_comparison_div())
+            dbc.Row(id="close-comparison-div", children=make_close_comparison_div(), className="close-comparison")
         ],
         id="comparison-div-parent"
     )
@@ -79,6 +79,7 @@ def make_close_comparison_unit(ridership_df, min_date, max_date, modes, n):
     top = px.line(df, x='date', y=modes)
     #main_top.update_layout(**COMPARISON_DIV_LAYOUT)
     #main_top.update_layout(margin=dict(b=10, t=10))
+    top.update_layout(margin=COMPARISON_DIV_LAYOUT['margin'])
     top.update_traces(line={'width' : 1})
 
     bot = px.line(
@@ -86,23 +87,28 @@ def make_close_comparison_unit(ridership_df, min_date, max_date, modes, n):
                 color_discrete_sequence=DAYTYPE_COLORS[:len(modes)],
                 facet_col="weekday"
             )
+    
+    bot.update_layout(margin=COMPARISON_DIV_LAYOUT['margin'])
     #main_bot.update_layout(**COMPARISON_DIV_LAYOUT)
     #main_bot.update_layout(margin=dict(t=20, b=0))
     #main_bot.update_xaxes(showticklabels=False, title=None)
     layout = dbc.Col([
         dbc.Row(
             dbc.Col(html.Div(f"{min_date} to {max_date}"), width="auto"),
-            className="mt-1 mb-1",# style={'height' : 'comparison-unit-button'}
+            className="mt-1 mb-1", style={"height" : "10%"}# style={'height' : 'comparison-unit-button'}
         ),
         dbc.Row(dcc.Graph(
             figure=top,
-            config={'staticPlot': True}
+            config={'staticPlot': True},
+            style={"height" : "50%"}
         )),
         dbc.Row(dcc.Graph(
             figure=bot,
-            config={'staticPlot': True}
+            config={'staticPlot': True},
+            style={"height" : "40%"}
         ))
     ], id={'type' : 'close-comparison-graph', 'index' : n})
+    COMPARISON_DIV_LAYOUT['margin']
     return layout
 
 

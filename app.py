@@ -257,7 +257,7 @@ def f(n, min_date, max_date, modes, _, children, dates):
 #    State({'type' : })
 )
 def update_close_comparison_graph(check, left, right, children, dates, old): 
-    print(old)
+    #print(old)
     if check == []:
         #print(f"{[1, 2, 3]}")
         return [{'old' : check}], left, right
@@ -279,11 +279,11 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
             return graph, right
         elif right['props']['id']['type'] == 'default-container':
             return left, graph
-        print(1)
+        #print(1)
     
 
     def remove_graph():
-        print(left['props']['id']['type'])
+        #print(left['props']['id']['type'])
         if left['props']['id']['type'] != 'default-container':
             print(left['props']['id']['index'], ctx.triggered_id['index'])
             if left['props']['id']['index'] == ctx.triggered_id['index']:
@@ -293,10 +293,10 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
             if right['props']['id']['index'] == ctx.triggered_id['index']:
                 return left, comparison_mode.default_container
         
-        print(2)
+        #print(2)
     
-    print(check, triggered_index)
-    print(ctx.triggered_id)
+    #print(check, triggered_index)
+    #print(ctx.triggered_id)
     if check[triggered_index] == [True]:
         left_graph, right_graph = add_graph()
         return [{'old' : check}], left_graph, right_graph
@@ -317,6 +317,34 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
     left_graph, right_graph = remove_graph()
     return [{'old' : check}], left_graph, right_graph
 
+
+@app.callback(
+    Output({'type': 'comparison-unit-check', 'index': ALL}, 'options'),
+    Input({'type': 'comparison-unit-check', 'index': ALL}, 'value'),
+    State({'type': 'comparison-unit-check', 'index': ALL}, 'options')
+)
+def disable_comparison_unit_checks(check, opts):
+    val = 0
+    #print(opts)
+    for c in check:
+        if c == [True]:
+            val += 1
+    #print(val)
+
+    new_options = []
+    if val == 2:
+        for i, opt in enumerate(opts):
+            print(opt)
+            if check[i] == [True]:
+                new_options.append(opt)
+            else:
+                new_options.append([{**opt[0], 'disabled': True}])
+    else:
+        for opt in opts:
+            print(opt)
+            new_options.append([{**opt[0], 'disabled': False}])
+
+    return new_options
 
     
     #if left['props']['id']['type'] == 'default-container':
