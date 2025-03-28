@@ -107,9 +107,9 @@ def make_close_comparison_unit(ridership_df, min_date, max_date, modes, n):
             config={'staticPlot': True},
             style={"height" : "40%"}
         ))
-    ], id={'type' : 'close-comparison-graph', 'index' : n})
+    ], id={'type' : 'close-comparison-graph', 'index' : n}, class_name="close-comparison")
     COMPARISON_DIV_LAYOUT['margin']
     return layout
 
 
-default_container = dbc.Container("please, check graphs to compare.", id={'type' : 'default-container'})
+default_container = dbc.Container("please, check graphs to compare.", class_name="default-container")

@@ -258,6 +258,9 @@ def f(n, min_date, max_date, modes, _, children, dates):
 )
 def update_close_comparison_graph(check, left, right, children, dates, old): 
     #print(old)
+
+    #print(ctx.triggered_id)
+    #print(check)
     if check == []:
         #print(f"{[1, 2, 3]}")
         return [{'old' : check}], left, right
@@ -275,21 +278,22 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
         max_date = dates[triggered_index]['max_date']
         
         graph = comparison_mode.make_close_comparison_unit(ridership_df, min_date, max_date, DEFAULT_MODES, ctx.triggered_id['index'])
-        if left['props']['id']['type'] == 'default-container':
+        if left['props']['class_name'] == 'default-container':
             return graph, right
-        elif right['props']['id']['type'] == 'default-container':
+        elif right['props']['class_name'] == 'default-container':
             return left, graph
         #print(1)
     
 
     def remove_graph():
         #print(left['props']['id']['type'])
-        if left['props']['id']['type'] != 'default-container':
-            print(left['props']['id']['index'], ctx.triggered_id['index'])
+        
+        if left['props']['class_name'] != 'default-container':
+            print(left['props']['id'], ctx.triggered_id)
             if left['props']['id']['index'] == ctx.triggered_id['index']:
                 return comparison_mode.default_container, right
-        
-        if right['props']['id']['type'] != 'default-container':
+            
+        if right['props']['class_name'] != 'default-container':
             if right['props']['id']['index'] == ctx.triggered_id['index']:
                 return left, comparison_mode.default_container
         
@@ -301,6 +305,7 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
         left_graph, right_graph = add_graph()
         return [{'old' : check}], left_graph, right_graph
     
+    #print(1)
     old_checked = 0
     for el in old[0]['old']:
         if el == [True]:
@@ -334,14 +339,14 @@ def disable_comparison_unit_checks(check, opts):
     new_options = []
     if val == 2:
         for i, opt in enumerate(opts):
-            print(opt)
+            #print(opt)
             if check[i] == [True]:
                 new_options.append(opt)
             else:
                 new_options.append([{**opt[0], 'disabled': True}])
     else:
         for opt in opts:
-            print(opt)
+            #print(opt)
             new_options.append([{**opt[0], 'disabled': False}])
 
     return new_options
@@ -350,8 +355,23 @@ def disable_comparison_unit_checks(check, opts):
     #if left['props']['id']['type'] == 'default-container':
 
         
+@app.callback(
+    #Output({'type': 'comparison-unit-check', 'index': ALL}, 'value'),
+    Input({"type" : "dynamic-delete", "index" : ALL}, "n_clicks"),
+    State({'type': 'comparison-unit-check', 'index': ALL}, 'value')
+)
+def remove_deleted_graph1(_, old_checkbox):
+    print(ctx.triggered_id)
+    print(old_checkbox)
+    #print(check)
+    #return no_update
 
-
+@app.callback(
+    Input("save-button", "n_clicks"),
+    State("close-comparison-unit-left", "children")
+)
+def fun(_, component):
+    print(component['props'].keys())
 
 
 app.run_server(debug=True)
