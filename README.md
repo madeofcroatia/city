@@ -1,4 +1,5 @@
 # city
+No `requirements.txt` yet... To run this you will need to install Dash, Dash Bootstrap Components and Panda into your environment. Then, run app.py via `python3 app.py` from the repository folder.
 Proposed project structure
 ```
 src/
