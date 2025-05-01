@@ -301,6 +301,7 @@ def update_close_comparison_graph(check, left, right, children, dates, old):
     
     #print(check, triggered_index)
     #print(ctx.triggered_id)
+    print(left['props']['class_name'], right['props']['class_name'])
     if check[triggered_index] == [True]:
         left_graph, right_graph = add_graph()
         return [{'old' : check}], left_graph, right_graph
@@ -374,5 +375,5 @@ def fun(_, component):
     print(component['props'].keys())
 
 
-app.run_server(debug=True)
+app.run(debug=True)
 

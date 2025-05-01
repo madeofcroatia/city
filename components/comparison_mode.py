@@ -53,7 +53,7 @@ def make_comparison_unit(ridership_df, min_date, max_date, modes, n):
             figure=main_bot,
             config={'staticPlot': True}
         ), className="comparison-unit-bot")
-    ], id=f"comparison-{n}", width=COMPARISON_UNIT_WIDTH, className="border comparison-unit")
+    ], id=f"comparison-{n}", width=COMPARISON_UNIT_WIDTH, class_name="border comparison-unit")
     return layout
 
 
